@@ -1,11 +1,14 @@
 #include <ESP8266WiFi.h>  // include Wi-Fi library
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+#include <string.h> // string manipulation library
 
 #define LED 4
 
 const char* ssid = "Mon Calamari";
 const char* password = "";
+
+char html[2048];
 
 const char INDEX_HTML[] = // index.html string here
 "<!DOCTYPE html>"
@@ -22,9 +25,13 @@ const char INDEX_HTML[] = // index.html string here
 "</style>"
 "</head>"
 
-"<body>"
-"<h1>Welcome to Mon Calamari</h1>"
+"<body>";
 
+const char ROOT_HTML[] = // index.html string here
+"<h1>Welcome to Mon Calamari</h1>";
+
+const char FORM_HTML[] = // index.html string here
+"<h1>Ohm's Law Current Calculator</h1>"
 "<form oninput=\"current.value = 1000 * parseFloat(voltage.value) / parseFloat(resistance.value)\">"
 
 "<input type=\"number\" id=\"voltage\" value=\"9\"> Volts <br>"
@@ -37,29 +44,10 @@ const char INDEX_HTML[] = // index.html string here
 "<input type=\"radio\" name=\"LED\" value=\"1\">On<br>"
 "<input type=\"radio\" name=\"LED\" value=\"0\">Off<br>"
 "<input type=\"submit\" value=\"Send\"></p>"
-"</form>"
-"</body>"
-"</html>";
+"</form>";
 
 const char ERROR_HTML[] = // error.html string here
-"<!DOCTYPE html>"
-"<html>"
-"<head>"
-"<title>Mon Calamari</title>"
-"<style>"
-"  body {"
-"    width: 100vw;"
-"    margin: 50px auto;"
-"    font-family: Tahoma, Verdana, Arial, sans-serif;"
-"    text-align: center;"
-"  }"
-"</style>"
-"</head>"
-
-"<body>"
-"<h1>500 - Internal Server Error</h1>"
-"</body>"
-"</html>";
+"<h1>500 - Internal Server Error</h1>";
 
 ESP8266WebServer server(8080); // port 80 http
 
@@ -67,18 +55,23 @@ ESP8266WebServer server(8080); // port 80 http
 // is required. This displays the Webpage
 void handleRoot()
 {
-  server.send(200, "text/html", INDEX_HTML); // 200-no error, format, html file
+  strcat(html, ROOT_HTML);
+  strcat(html, "</body></html>");
+  server.send(200, "text/html", html); // 200-no error, format, html file
 }
 
 // This function is called whenever the error Webpage
 // is required. This displays the Webpage
 void handleError()
 {
-  server.send(500, "text/html", ERROR_HTML); // 500 - internal server error, format, html file
+  strcat(html, ERROR_HTML);
+  strcat(html, "</body></html>");
+  server.send(500, "text/html", html); // 500 - internal server error, format, html file
 }
 
 bool writeLED(bool LEDvalue) 
 {
+  Serial.println(LEDvalue);
   switch(LEDvalue) {
     case 1: digitalWrite(LED, HIGH); handleRoot();
     case 0: digitalWrite(LED, LOW); handleRoot();
@@ -89,7 +82,9 @@ bool writeLED(bool LEDvalue)
 //
 void handleForm()
 {
-  server.send(200, "text/html", INDEX_HTML);
+  strcat(html, FORM_HTML);
+  strcat(html, "</body></html>");
+  server.send(200, "text/html", html);
   String LEDvalue;
 
   if (!server.hasArg("LED")) return;
@@ -124,5 +119,6 @@ void setup(void) {
 }
 
 void loop(void) {
+  strcpy(html, INDEX_HTML);
   server.handleClient(); // handle any client requests
 }
